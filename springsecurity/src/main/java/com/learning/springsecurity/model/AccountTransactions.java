@@ -18,7 +18,7 @@ import java.sql.Date;
 public class AccountTransactions {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    //@GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "transaction_id")
     private String transactionId;
 

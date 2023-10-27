@@ -35,7 +35,7 @@ public class ProjectSecurityConfig {
     //@Order(2147483642)
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
         http.csrf().disable().authorizeHttpRequests((requests) -> {
-            requests.requestMatchers("/api/v1/myAccount", "/balance/**", "/loans/**", "/cards/**").authenticated() //authenticated forces spring to secure those end-points
+            requests.requestMatchers("/api/v1/myAccount", "/balance/**", "/loans/**", "/cards/**", "/user").authenticated() //authenticated forces spring to secure those end-points
                     .requestMatchers("/notices/**", "/contact/**", "/register").permitAll();
         });
         http.formLogin(Customizer.withDefaults());

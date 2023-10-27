@@ -18,7 +18,7 @@ import java.sql.Date;
 public class Contact {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    //@GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "contact_id")
     private String contactId;
 

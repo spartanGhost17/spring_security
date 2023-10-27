@@ -17,12 +17,12 @@ public class Accounts {
 
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    //@GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "account_number")
     private long accountNumber;
 
     @Column(name = "customer_id")
-    private int costumerId;
+    private int customerId;
 
     @Column(name = "account_type")
     private String accountType;
