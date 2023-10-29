@@ -32,7 +32,7 @@ export class DashboardService {
     return this.http.get(environment.rooturl + AppConstants.NOTICES_API_URL,{ observe: 'response' });
   }
 
-  saveMessage(contact : Contact){
+  saveMessage(contact : Contact){ //,withCredentials: true allows to send auth info and cookies back
     return this.http.post(environment.rooturl + AppConstants.CONTACT_API_URL,contact,{ observe: 'response'});
   }
 

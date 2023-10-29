@@ -4,6 +4,7 @@ import {Router} from '@angular/router';
 import {tap} from 'rxjs/operators';
 import { User } from 'src/app/model/user.model';
 
+//intercepts each request going from UI application to backend
 @Injectable()
 export class XhrInterceptor implements HttpInterceptor {
 
@@ -15,8 +16,17 @@ export class XhrInterceptor implements HttpInterceptor {
     if(sessionStorage.getItem('userdetails')){
       this.user = JSON.parse(sessionStorage.getItem('userdetails')!);
     }
+
     if(this.user && this.user.password && this.user.email){
       httpHeaders = httpHeaders.append('Authorization', 'Basic ' + window.btoa(this.user.email + ':' + this.user.password));
+    }
+
+    /**
+     * xsrf set to header 
+     */
+    let xsrf = sessionStorage.getItem('XSRF-TOKEN');
+    if(xsrf) {
+      httpHeaders = httpHeaders.append('XSRF-TOKEN', xsrf);
     }
 
     httpHeaders = httpHeaders.append('X-Requested-With', 'XMLHttpRequest');
