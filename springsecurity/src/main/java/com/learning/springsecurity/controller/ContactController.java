@@ -16,7 +16,7 @@ public class ContactController {
     private ContactRepository contactRepository;
 
     @PostMapping(value = "contact")
-    public Contact saveContactInquiryDetails(@RequestParam Contact contact) {
+    public Contact saveContactInquiryDetails(@RequestBody Contact contact) {
         contact.setContactId(getServiceReqNumber());
         contact.setCreateDt(new Date(System.currentTimeMillis()));
         return contactRepository.save(contact);
