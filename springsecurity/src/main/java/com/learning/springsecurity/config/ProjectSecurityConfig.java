@@ -1,6 +1,6 @@
 package com.learning.springsecurity.config;
 
-import com.learning.springsecurity.filter.CsrfCookieFilter;
+import com.learning.springsecurity.filter.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +16,7 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 @Configuration
@@ -48,12 +49,14 @@ public class ProjectSecurityConfig {
         requestAttributeHandler.setCsrfRequestAttributeName("_csrf");
 
         //requireExplicitSave(false) gives spring all the responsability of generating and storing JSessionId in context
-        http.securityContext().requireExplicitSave(false)
+        //http.securityContext().requireExplicitSave(false)
                 //tell spring how to manage session using defined session management below
                 //basically tells spring to create a JSessionId after initial login is completed and persist that id
                 //UI will leverage that for all subsequent value
-                .and().sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
-                .cors().configurationSource(new CorsConfigurationSource() {
+        //        .and().sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.ALWAYS)) // this is only if the backend will generate and validate its own JSession ID
+
+        http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))//STATELESS: Spring Security will never create an HttpSession and it will never use it to obtain the SecurityContext
+                .cors(corsCutomizer -> corsCutomizer.configurationSource(new CorsConfigurationSource() {
                     @Override
                     public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
                         CorsConfiguration configuration = new CorsConfiguration();
@@ -61,14 +64,32 @@ public class ProjectSecurityConfig {
                         configuration.setAllowedMethods(Collections.singletonList("*"));//Arrays.asList("GET", "POST", "PUT", "DELETE")
                         configuration.setAllowCredentials(true);
                         configuration.setAllowedHeaders(Collections.singletonList("*"));//Arrays.asList("Authorization", "Content-Type")
+                        configuration.setExposedHeaders(Arrays.asList("Authorization"));
                         configuration.setMaxAge(3600L);
                         return configuration;
                     }
-                }).and().csrf((csrf) -> csrf.csrfTokenRequestHandler(requestAttributeHandler).ignoringRequestMatchers("/contact/**", "/register").csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())) //enforced for public post methods to prevent csrf attack only if method is not GET
-                .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class) //execute CsrfCookieFilter after BasicAuthenticationFilter when login is complete and persist csrf token
+                })).csrf((csrf) -> csrf.csrfTokenRequestHandler(requestAttributeHandler).ignoringRequestMatchers("/contact/**", "/register")
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())) //enforced for public post methods to prevent csrf attack only if method is not GET
+                        .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class) //execute CsrfCookieFilter after BasicAuthenticationFilter when login is complete and persist csrf token
+                        .addFilterBefore(new RequestValidationBeforeFilter(), BasicAuthenticationFilter.class)
+                        .addFilterAt(new AuthoritiesAtFilter(), BasicAuthenticationFilter.class)
+                        .addFilterAfter(new AuthoritesLoggingAfterFilter(), BasicAuthenticationFilter.class)
+                        .addFilterAfter(new JWTTokenGeneratorFilter(), BasicAuthenticationFilter.class)//generate JWT Token after basic au
+                        .addFilterBefore(new JWTTokenValidationBeforeFilter(), BasicAuthenticationFilter.class)//validate JWT Token before default validation ( basic authentication )
                 .authorizeHttpRequests((requests) -> {
-                    requests.requestMatchers("/api/v1/myAccount", "/balance/**", "/loans/**", "/cards/**", "/user").authenticated() //authenticated forces spring to secure those end-points
-                            .requestMatchers("/notices/**","/register", "/contact/**").permitAll();
+                        requests
+                                /*.requestMatchers("/api/v1/myAccount").hasAuthority("VIEWACCOUNT")
+                                .requestMatchers("/balance/**").hasAnyAuthority("VIEWACCOUNT", "VIEWBALANCE")
+                                .requestMatchers("/loans/**").hasAuthority("VIEWLOANS")
+                                .requestMatchers("/cards/**").hasAuthority("VIEWCARDS")*/
+                                .requestMatchers("/api/v1/myAccount").hasRole("USER")
+                                .requestMatchers("/cards/**").hasRole("USER")
+                                .requestMatchers("/balance/**").hasAnyRole("USER", "ADMIN")
+                                .requestMatchers("/loans/**").hasRole("USER")
+
+                                .requestMatchers("/user").authenticated() //authenticated forces spring to secure those end-points
+                                .requestMatchers("/notices/**","/register", "/contact/**").permitAll();
+
                 });
         http.formLogin(Customizer.withDefaults());
         http.httpBasic(Customizer.withDefaults());
